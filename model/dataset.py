@@ -1,33 +1,48 @@
-from torch.utils.data import DataLoader
-from torchvision import transforms
-from torchvision.datasets import ImageFolder
+import torch
+from torch.utils import data
+import os
+import json
+from PIL import Image
 
-# transforms
-normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                 std=[0.229, 0.224, 0.225])
-transform = transforms.Compose([
-    transforms.Resize(224),
-    transforms.CenterCrop(224),
-    transforms.ToTensor(),
-    normalize
-])
+def pil_loader(path):
+    with open(path, 'rb') as f:
+        img = Image.open(f)
+        return img.convert('RGB')
 
-# torchvision ImageFolder
-img_folder = '../data/icon/'
-train_dataset = ImageFolder(img_folder + 'train/', transform=transform)
-test_dataset = ImageFolder(img_folder + 'test/', transform=transform)
+class Dataset(data.Dataset):
+    def __init__(self, root, transforms=None):
+        # img
+        imgs = [img for img in os.listdir(root) if '.' in img] # just file
+        self.imgs = [os.path.join(root, img) for img in imgs]
+        # label
+        json_file = '../data/json/google_play_all.json'
+        with open(json_file) as f:
+            data = json.load(f)
+        self.labels = [int(d['Installs']) for d in data]
+        
+        idx2class = set(self.labels)
+        self.idx2class = [str(i) for i in sorted([int(i) for i in idx2class])]
+        self.class2idx = {int(c):i for i, c in enumerate(self.idx2class)}
 
-idx2class = train_dataset.classes
-class2idx = train_dataset.class_to_idx
-print(idx2class)
+        self.transforms = transforms
 
-print('Train: ', len(train_dataset))
-print('Test: ', len(test_dataset))
+    def __getitem__(self, index):
+        img_path = self.imgs[index]
+        img = pil_loader(img_path)
+        if self.transforms:
+            img = self.transforms(img)
 
-# preparing train loader
-train_loader = DataLoader(train_dataset, batch_size=16, shuffle=False,
-    num_workers=0, pin_memory=True)
-test_loader = DataLoader(test_dataset, batch_size=16, shuffle=False,
-    num_workers=0, pin_memory=True)
+        true_idx = int(img_path.split('/')[-1].replace('.jpg',''))
+        label = self.labels[true_idx]
+        label = self.class2idx[label]
 
-print('Datasets load success!')
+        return img, label
+    def __len__(self):
+        return len(self.imgs)
+
+if __name__ == '__main__':
+    dataset = Dataset('../data/icon/train/')
+
+    for i in range(10):
+        img, label = dataset[i]
+        print(img.size, label)

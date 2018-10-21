@@ -6,10 +6,10 @@ from torch.optim import Adam
 from torchvision.models import resnet50
 # self
 from vis import Vis
-from dataset import train_loader, test_loader, idx2class, class2idx
+from data_loader import train_loader, test_loader, idx2class, class2idx
 from test import test
 
-def train(epoch, model, train_loader, criterion):
+def train(epoch, model, train_loader, criterion, optimizer, vis):
     model.train()
     for i, (data, label) in enumerate(train_loader):
         data = Variable(data).cuda() # gpu
@@ -42,21 +42,22 @@ if __name__ == '__main__':
     model.fc = nn.Linear(input_size, len(idx2class)) # output 20 category
 
     # load exist
-    checkpoints = 'checkpoints/res_net50_0_0.07.pt'
+    checkpoints = 'checkpoints/res_net50_0.14.pt'
+    checkpoints = ''
     if checkpoints:
         model.load_state_dict(torch.load(checkpoints)) # load exist model
     model.cuda() # gpu
 
     # criterion, optimizer
     criterion = nn.CrossEntropyLoss().cuda() # gpu
-    optimizer = Adam(model.parameters(), lr=0.001)
+    optimizer = Adam(model.parameters(), lr=0.005)
 
-    epoches = 15
+    epoches = 7
     for epoch in range(epoches):
-        train(epoch, model, train_loader, criterion)
+        train(epoch, model, train_loader, criterion, optimizer, vis)
         # save the model
         torch.save(model.state_dict(), 'checkpoints/res_net50_{}.pt'.format(epoch))
-        test(model, test_loader)
+        test(epoch, model, test_loader, criterion, vis)
 
     # save the model
     torch.save(model.state_dict(), 'checkpoints/res_net50.pt')

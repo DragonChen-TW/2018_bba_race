@@ -6,9 +6,9 @@ from torch.optim import Adam
 from torchvision.models import resnet50
 # self
 from vis import Vis
-from dataset import test_loader, idx2class, class2idx
+from data_loader import test_loader, idx2class, class2idx
 
-def test(model, test_loader):
+def test(epoch, model, test_loader, criterion, vis):
     model.eval()
     test_loss = 0
     correct = 0
@@ -21,7 +21,7 @@ def test(model, test_loader):
         test_loss += criterion(output, label).item()
         # get the index of max
         pred = output.data.max(1, keepdim=True)
-        print(pred)
+        # print(pred)
         pred = pred[1]
         correct += pred.eq(label.data.view_as(pred)).cuda().sum() # gpu
 
@@ -51,7 +51,7 @@ if __name__ == '__main__':
     model.fc = nn.Linear(input_size, len(idx2class)) # output 20 category
 
     # load exist
-    checkpoints = 'checkpoints/res_net50_0_0.07.pt'
+    checkpoints = 'checkpoints/res_net50_0.14.pt'
     if checkpoints:
         model.load_state_dict(torch.load(checkpoints)) # load exist model
     model.cuda() # gpu
@@ -59,4 +59,4 @@ if __name__ == '__main__':
     # criterion
     criterion = nn.CrossEntropyLoss().cuda() # gpu
 
-    test(model, test_loader)
+    test(0, model, test_loader, criterion, vis)

@@ -4,7 +4,11 @@ BBA race in nsysu https://bba.cm.nsysu.edu.tw/
 ## Requirements
 ### Crawler
 - requests
-- bs4 (BeautifulSoup)
+- selenium
+
+### Model
+- pyTorch
+- torchvision
 
 ## Datasets
 ### From kaggle
