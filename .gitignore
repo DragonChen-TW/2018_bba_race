@@ -1,6 +1,7 @@
 # Project
 # img
-data/icon/*.*
+data/icon/*
+model/checkpoints/*
 
 
 # Byte-compiled / optimized / DLL files
