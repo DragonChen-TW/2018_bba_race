@@ -6,7 +6,8 @@ from torch.optim import Adam
 from torchvision.models import resnet50
 # self
 from vis import Vis
-from data_loader import train_loader, test_loader, idx2class, class2idx
+import vars
+from data_loader import get_data_loader
 from test import test
 
 def train(epoch, model, train_loader, criterion, optimizer, vis):
@@ -23,7 +24,7 @@ def train(epoch, model, train_loader, criterion, optimizer, vis):
         loss.backward()
         optimizer.step()
 
-        if i % 10 == 0:
+        if i % 30 == 0:
             status = 'Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch + 1, i * len(data), len(train_loader.dataset),
                 100. * i / len(train_loader), loss.item())
@@ -33,16 +34,16 @@ def train(epoch, model, train_loader, criterion, optimizer, vis):
 
 if __name__ == '__main__':
     # load data and init
-    # traint_loader test_loader
+    train_loader, test_loader = get_data_loader()
     vis = Vis('bba_race resnet')
 
     # model
     model = resnet50()
     input_size = model.fc.in_features
-    model.fc = nn.Linear(input_size, len(idx2class)) # output 20 category
+    model.fc = nn.Linear(input_size, 20) # output 20 category
 
     # load exist
-    checkpoints = 'checkpoints/res_net50_0.14.pt'
+    # checkpoints = vars.checkpoint_path + 'res_net50_0.14.pt'
     checkpoints = ''
     if checkpoints:
         model.load_state_dict(torch.load(checkpoints)) # load exist model
@@ -50,14 +51,11 @@ if __name__ == '__main__':
 
     # criterion, optimizer
     criterion = nn.CrossEntropyLoss().cuda() # gpu
-    optimizer = Adam(model.parameters(), lr=0.005)
+    optimizer = Adam(model.parameters(), lr=0.01)
 
-    epoches = 7
+    epoches = 1
     for epoch in range(epoches):
         train(epoch, model, train_loader, criterion, optimizer, vis)
         # save the model
-        torch.save(model.state_dict(), 'checkpoints/res_net50_{}.pt'.format(epoch))
+        torch.save(model.state_dict(), vars.checkpoint_path + 'res_net50_{}.pt'.format(epoch))
         test(epoch, model, test_loader, criterion, vis)
-
-    # save the model
-    torch.save(model.state_dict(), 'checkpoints/res_net50.pt')

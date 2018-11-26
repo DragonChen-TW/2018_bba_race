@@ -6,7 +6,8 @@ from torch.optim import Adam
 from torchvision.models import resnet50
 # self
 from vis import Vis
-from data_loader import test_loader, idx2class, class2idx
+import vars
+from data_loader import get_data_loader
 
 def test(epoch, model, test_loader, criterion, vis):
     model.eval()
@@ -17,6 +18,8 @@ def test(epoch, model, test_loader, criterion, vis):
         label = Variable(label).cuda() # gpu
         output = model(data)
 
+        # print(output)
+
         # sum up batch loss
         test_loss += criterion(output, label).item()
         # get the index of max
@@ -25,7 +28,7 @@ def test(epoch, model, test_loader, criterion, vis):
         pred = pred[1]
         correct += pred.eq(label.data.view_as(pred)).cuda().sum() # gpu
 
-        if i % 10 == 0:
+        if i % 30 == 0:
             status = 'Test: [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 i * len(data), len(test_loader.dataset),
                 100. * i / len(test_loader), test_loss)
@@ -42,16 +45,16 @@ def test(epoch, model, test_loader, criterion, vis):
 
 if __name__ == '__main__':
     # load data and init
-    # traint_loader test_loader
+    train_loader, test_loader = get_data_loader()
     vis = Vis('bba_race resnet')
 
     # model
     model = resnet50()
     input_size = model.fc.in_features
-    model.fc = nn.Linear(input_size, len(idx2class)) # output 20 category
+    model.fc = nn.Linear(input_size, 20) # output 20 category
 
     # load exist
-    checkpoints = 'checkpoints/res_net50_0.14.pt'
+    checkpoints = vars.checkpoint_path + 'res_net50_0.14.pt'
     if checkpoints:
         model.load_state_dict(torch.load(checkpoints)) # load exist model
     model.cuda() # gpu
